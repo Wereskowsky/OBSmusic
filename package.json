@@ -1,17 +1,26 @@
 {
   "name": "obsmusic-web-plugin",
-  "version": "1.0.0",
-  "description": "OBS browser source plugin-like overlay with Spotify integration",
+  "version": "1.1.0",
+  "description": "OBS overlay with Spotify integration and Windows one-click installer",
   "main": "server/index.js",
+  "bin": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "nodemon server/index.js"
+    "dev": "nodemon server/index.js",
+    "build:win:portable": "pkg . --targets node20-win-x64 --output dist/OBSmusic.exe",
+    "build:win:installer": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-installer.ps1"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "frontend/**/*"
+    ]
   }
 }

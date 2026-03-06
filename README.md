@@ -1,109 +1,108 @@
 # OBSmusic Web Plugin
 
-Веб-плагин (Browser Source) для OBS, который показывает обложку альбома и название трека из Spotify.
+Готовый плагин/оверлей для OBS с Spotify, теперь с **автоматической установкой под Windows через `.exe`**.
 
-## Что реализовано
+## Что умеет
 
-- **Free-режим**:
-  - обновление вручную по кнопке `Обновить вручную`;
-  - использует Spotify API через `client_credentials` (демо-трек из `SPOTIFY_FREE_TRACK_ID`).
-- **Pro-режим**:
-  - авторизация через Spotify OAuth;
-  - получение **текущего трека пользователя** (`/me/player/currently-playing`);
-  - автообновление каждые **3 секунды**.
-- **Настройки стиля**:
+- **Free**: обновление трека по кнопке.
+- **Pro**: Spotify OAuth + автообновление каждые **3 секунды**.
+- Отображение:
+  - название трека;
+  - исполнители;
+  - обложка альбома.
+- Простая кастомизация:
   - цвет текста;
-  - цвет фона карточки;
-  - радиус скругления;
-  - настройки сохраняются в `localStorage`.
+  - цвет фона;
+  - скругление.
 
 ---
 
-## Архитектура модулей
+## Быстрый старт для пользователя (без Node.js)
 
-- `frontend/` — интерфейс HTML/CSS/JavaScript (overlay + настройки).
-  - `frontend/index.html` — UI.
-  - `frontend/styles.css` — стили.
-  - `frontend/js/api.js` — запросы к backend.
-  - `frontend/js/ui.js` — рендер трека/ошибок/режимов.
-  - `frontend/js/settings.js` — кастомизация стиля и localStorage.
-  - `frontend/js/app.js` — точка входа (режимы, polling, обработчики).
-- `server/` — Node.js backend.
-  - `server/index.js` — запуск Express и раздача frontend.
-  - `server/routes/api.js` — REST API для free/pro режимов и OAuth callbacks.
-  - `server/services/spotifyService.js` — интеграция со Spotify API.
+> Цель: «поставил `.exe` → запустил → всё работает».
+
+1. Скачай `OBSmusic-Setup.exe` из релиза.
+2. Установи программу обычным мастером установки.
+3. Запусти `OBSmusic` из меню Пуск.
+4. Приложение автоматически поднимет локальный сервер и откроет окно с оверлеем (`http://localhost:3000`).
+5. В OBS:
+   - либо добавь **Захват окна** и выбери окно браузера с OBSmusic;
+   - либо добавь **Browser Source** с URL `http://localhost:3000`.
 
 ---
 
-## Установка
+## Как собрать `OBSmusic-Setup.exe` (для разработчика)
 
-1. Установи зависимости:
+### Требования
+
+- Windows x64
+- Node.js 20+
+- Inno Setup 6
+
+### Команды
 
 ```bash
 npm install
+npm run build:win:installer
 ```
 
-2. Создай `.env` на основе примера:
+Результат:
 
-```bash
-cp .env.example .env
-```
+- portable: `dist/OBSmusic.exe`
+- installer: `dist/installer/OBSmusic-Setup.exe`
 
-3. Заполни значения в `.env`:
+Скрипт сборки:
 
-- `SPOTIFY_CLIENT_ID`
-- `SPOTIFY_CLIENT_SECRET`
-- `SPOTIFY_REDIRECT_URI` (обычно `http://localhost:3000/api/pro/auth/callback`)
-- `SPOTIFY_FREE_TRACK_ID` (любой публичный track id для Free-режима)
-
-4. Запусти сервер:
-
-```bash
-npm start
-```
-
-5. В OBS добавь источник **Browser Source** и укажи URL:
-
-```text
-http://localhost:3000
-```
+- `scripts/build-windows-installer.ps1`
+- Inno Setup конфиг: `installer/windows/OBSmusic.iss`
 
 ---
 
-## Настройка Spotify приложения
+## Настройка Spotify
 
-1. Открой [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Создай приложение.
-3. В `Redirect URIs` добавь URL из `.env` (`SPOTIFY_REDIRECT_URI`).
-4. Скопируй `Client ID` и `Client Secret` в `.env`.
+1. Создай приложение в [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
+2. Добавь Redirect URI: `http://localhost:3000/api/pro/auth/callback`.
+3. Заполни `.env` рядом с `OBSmusic.exe`:
 
----
+```env
+SPOTIFY_CLIENT_ID=...
+SPOTIFY_CLIENT_SECRET=...
+SPOTIFY_REDIRECT_URI=http://localhost:3000/api/pro/auth/callback
+SPOTIFY_FREE_TRACK_ID=11dFghVXANMlKmJXsNCbNl
+```
 
-## Как активировать Pro-доступ
-
-1. Запусти приложение.
-2. Открой `http://localhost:3000`.
-3. Переключись в `Pro` и нажми `Авторизовать Pro`.
-4. Пройди логин Spotify и подтверждение scope.
-5. На странице callback появится `refresh token`.
-6. Скопируй его в `.env` как `SPOTIFY_PRO_REFRESH_TOKEN`.
-7. Перезапусти сервер.
-
-После этого Pro-режим будет автоматически подтягивать текущий трек каждые 3 секунды.
+При первом запуске установщик создаёт `.env` из `.env.example` автоматически (если `.env` ещё нет).
 
 ---
 
-## API (кратко)
+## Активация Pro
 
-- `GET /api/free/current-track` — получить трек для Free-режима.
-- `GET /api/pro/auth/login` — старт OAuth.
-- `GET /api/pro/auth/callback` — callback OAuth.
-- `GET /api/pro/current-track` — текущий трек авторизованного пользователя.
-- `GET /api/config` — конфиг режимов.
+1. Открой интерфейс OBSmusic.
+2. Переключись в `Pro`.
+3. Нажми `Авторизовать Pro`.
+4. После callback скопируй refresh token.
+5. Вставь его в `.env`:
+
+```env
+SPOTIFY_PRO_REFRESH_TOKEN=...
+```
+
+6. Перезапусти приложение.
 
 ---
 
-## Примечания
+## Архитектура
 
-- Для Pro-режима в Spotify должен реально идти playback (иначе Spotify вернет пустой результат).
-- Free-режим сделан как безопасный базовый вариант без пользовательской авторизации.
+- `frontend/` — HTML/CSS/JS интерфейс.
+- `server/` — Node.js API и Spotify интеграция.
+- `scripts/` + `installer/windows/` — упаковка в portable `.exe` и инсталлятор.
+
+---
+
+## API
+
+- `GET /api/free/current-track`
+- `GET /api/pro/auth/login`
+- `GET /api/pro/auth/callback`
+- `GET /api/pro/current-track`
+- `GET /api/config`
