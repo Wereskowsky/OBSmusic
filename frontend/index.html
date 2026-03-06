@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OBSmusic Overlay</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="overlay-card" id="overlayCard">
+        <img id="albumCover" class="album-cover" alt="Обложка альбома" />
+        <div class="meta">
+          <p class="label" id="modeLabel">Mode: Free</p>
+          <h1 id="trackName">Нажмите обновить</h1>
+          <p id="trackArtists">Исполнитель появится здесь</p>
+        </div>
+      </section>
+
+      <section class="controls">
+        <div class="mode-switch">
+          <button data-mode="free" class="mode-btn active">Free</button>
+          <button data-mode="pro" class="mode-btn">Pro</button>
+        </div>
+
+        <div class="actions">
+          <button id="refreshBtn">Обновить вручную</button>
+          <a id="proAuthBtn" href="/api/pro/auth/login" class="auth-link">Авторизовать Pro</a>
+        </div>
+
+
+        <div class="service-select-row">
+          <label for="serviceSelect">Музыкальный сервис</label>
+          <select id="serviceSelect">
+            <option value="spotify">Spotify</option>
+            <option value="ytmusic">YouTube Music</option>
+            <option value="yandex">Яндекс Музыка</option>
+          </select>
+          <button id="scanServicesBtn">Автопоиск сервисов</button>
+        </div>
+        <p id="discoveryStatus" class="discovery-status">Нажмите «Автопоиск сервисов».</p>
+
+        <fieldset class="style-settings">
+          <legend>Настройки стиля</legend>
+          <label>
+            Цвет текста
+            <input type="color" id="textColor" value="#ffffff" />
+          </label>
+          <label>
+            Цвет фона
+            <input type="color" id="backgroundColor" value="#121212" />
+          </label>
+          <label>
+            Скругление (px)
+            <input type="range" id="radius" min="0" max="32" value="14" />
+          </label>
+        </fieldset>
+      </section>
+    </main>
+
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
