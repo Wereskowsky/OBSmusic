@@ -1,14 +1,33 @@
-import { fetchConfig, fetchFreeTrack, fetchProTrack } from './api.js';
+import {
+  fetchConfig,
+  fetchFreeTrack,
+  fetchProTrack,
+  fetchServiceDiscovery,
+  fetchServiceTrack,
+} from './api.js';
 import { applyStyleSettings, loadStyleSettings, saveStyleSettings } from './settings.js';
 import { renderError, renderTrack, setModeButtons } from './ui.js';
 
 let mode = 'free';
+let selectedService = 'spotify';
 let proIntervalId = null;
+
+function setDiscoveryStatus(text) {
+  const status = document.getElementById('discoveryStatus');
+  status.textContent = text;
+}
 
 async function updateTrack() {
   try {
-    const payload = mode === 'pro' ? await fetchProTrack() : await fetchFreeTrack();
-    renderTrack(payload.track, mode);
+    let payload;
+
+    if (selectedService === 'spotify') {
+      payload = mode === 'pro' ? await fetchProTrack() : await fetchFreeTrack();
+    } else {
+      payload = await fetchServiceTrack(selectedService);
+    }
+
+    renderTrack(payload.track, `${mode}/${selectedService}`);
   } catch (error) {
     renderError(error.message);
   }
@@ -49,6 +68,40 @@ function bindRefreshButton() {
   document.getElementById('refreshBtn').addEventListener('click', updateTrack);
 }
 
+async function runDiscovery() {
+  try {
+    const data = await fetchServiceDiscovery();
+    const opened = Object.entries(data.services)
+      .filter(([, tab]) => Boolean(tab))
+      .map(([service]) => service);
+
+    if (opened.length === 0) {
+      setDiscoveryStatus('Сервисы не найдены. Запустите Chrome/Edge с --remote-debugging-port=9222 и откройте вкладку сервиса.');
+      return;
+    }
+
+    const select = document.getElementById('serviceSelect');
+    const preferred = opened.includes(selectedService) ? selectedService : opened[0];
+    selectedService = preferred;
+    select.value = preferred;
+
+    setDiscoveryStatus(`Найдены открытые сервисы: ${opened.join(', ')}.`);
+    await updateTrack();
+  } catch (error) {
+    setDiscoveryStatus(`Ошибка автопоиска: ${error.message}`);
+  }
+}
+
+function bindServiceSelector() {
+  const select = document.getElementById('serviceSelect');
+  select.addEventListener('change', async () => {
+    selectedService = select.value;
+    await updateTrack();
+  });
+
+  document.getElementById('scanServicesBtn').addEventListener('click', runDiscovery);
+}
+
 function bindStyleControls() {
   const textColor = document.getElementById('textColor');
   const backgroundColor = document.getElementById('backgroundColor');
@@ -73,6 +126,7 @@ async function bootstrap() {
   bindModeButtons();
   bindRefreshButton();
   bindStyleControls();
+  bindServiceSelector();
   setModeButtons(mode);
 
   const config = await fetchConfig();
@@ -80,6 +134,7 @@ async function bootstrap() {
     document.getElementById('proAuthBtn').classList.add('warn');
   }
 
+  await runDiscovery();
   await updateTrack();
 }
 

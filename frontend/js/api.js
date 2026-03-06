@@ -23,3 +23,21 @@ export async function fetchProTrack() {
   }
   return data;
 }
+
+export async function fetchServiceDiscovery() {
+  const response = await fetch('/api/services/discovery');
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Service discovery failed');
+  }
+  return data;
+}
+
+export async function fetchServiceTrack(service) {
+  const response = await fetch(`/api/services/current-track?service=${encodeURIComponent(service)}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Service track request failed');
+  }
+  return data;
+}

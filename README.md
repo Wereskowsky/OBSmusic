@@ -1,108 +1,86 @@
 # OBSmusic Web Plugin
 
-Готовый плагин/оверлей для OBS с Spotify, теперь с **автоматической установкой под Windows через `.exe`**.
+Плагин-оверлей для OBS с треками из **Spotify, YouTube Music и Яндекс Музыки**.
 
-## Что умеет
+## Новое: автопоиск сервисов
 
-- **Free**: обновление трека по кнопке.
-- **Pro**: Spotify OAuth + автообновление каждые **3 секунды**.
-- Отображение:
-  - название трека;
-  - исполнители;
-  - обложка альбома.
-- Простая кастомизация:
-  - цвет текста;
-  - цвет фона;
-  - скругление.
+Добавлен автоматический поиск музыкальных сервисов, которые открыты в браузере:
 
----
+- Spotify (`open.spotify.com`)
+- YouTube Music (`music.youtube.com`)
+- Яндекс Музыка (`music.yandex.ru`)
 
-## Быстрый старт для пользователя (без Node.js)
+В интерфейсе есть кнопка **«Автопоиск сервисов»** и выпадающий список выбора сервиса.
 
-> Цель: «поставил `.exe` → запустил → всё работает».
+> Важно: для автопоиска браузер должен быть запущен с remote debugging портом (Chrome/Edge).
 
-1. Скачай `OBSmusic-Setup.exe` из релиза.
-2. Установи программу обычным мастером установки.
-3. Запусти `OBSmusic` из меню Пуск.
-4. Приложение автоматически поднимет локальный сервер и откроет окно с оверлеем (`http://localhost:3000`).
-5. В OBS:
-   - либо добавь **Захват окна** и выбери окно браузера с OBSmusic;
-   - либо добавь **Browser Source** с URL `http://localhost:3000`.
+Пример запуска Chrome:
+
+```bash
+chrome.exe --remote-debugging-port=9222
+```
 
 ---
 
-## Как собрать `OBSmusic-Setup.exe` (для разработчика)
+## Режимы
 
-### Требования
+- **Free**: обновление вручную кнопкой.
+- **Pro**: автообновление каждые 3 секунды.
+  - Для Spotify Pro использует OAuth и `/me/player/currently-playing`.
+  - Для YouTube Music / Яндекс Музыки берёт данные из заголовка открытой вкладки (через devtools endpoint).
 
-- Windows x64
-- Node.js 20+
-- Inno Setup 6
+---
 
-### Команды
+## Быстрый старт пользователя (.exe)
+
+1. Установи `OBSmusic-Setup.exe`.
+2. Запусти OBSmusic.
+3. Открой Spotify/YouTube Music/Яндекс Музыку в браузере.
+4. Нажми «Автопоиск сервисов».
+5. Добавь в OBS:
+   - `Window Capture` (окно браузера), или
+   - `Browser Source` с `http://localhost:3000`.
+
+---
+
+## Сборка установщика (Windows)
+
+Требуется: Node.js 20+, Inno Setup 6.
 
 ```bash
 npm install
 npm run build:win:installer
 ```
 
-Результат:
+Артефакты:
 
-- portable: `dist/OBSmusic.exe`
-- installer: `dist/installer/OBSmusic-Setup.exe`
-
-Скрипт сборки:
-
-- `scripts/build-windows-installer.ps1`
-- Inno Setup конфиг: `installer/windows/OBSmusic.iss`
+- `dist/OBSmusic.exe`
+- `dist/installer/OBSmusic-Setup.exe`
 
 ---
 
-## Настройка Spotify
-
-1. Создай приложение в [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-2. Добавь Redirect URI: `http://localhost:3000/api/pro/auth/callback`.
-3. Заполни `.env` рядом с `OBSmusic.exe`:
+## Конфиг `.env`
 
 ```env
+PORT=3000
 SPOTIFY_CLIENT_ID=...
 SPOTIFY_CLIENT_SECRET=...
 SPOTIFY_REDIRECT_URI=http://localhost:3000/api/pro/auth/callback
 SPOTIFY_FREE_TRACK_ID=11dFghVXANMlKmJXsNCbNl
+SPOTIFY_PRO_REFRESH_TOKEN=
+OBSMUSIC_AUTO_OPEN=1
+OBSMUSIC_OPEN_BROWSER=1
+BROWSER_DEBUG_ENDPOINTS=http://127.0.0.1:9222/json,http://127.0.0.1:9223/json
 ```
-
-При первом запуске установщик создаёт `.env` из `.env.example` автоматически (если `.env` ещё нет).
-
----
-
-## Активация Pro
-
-1. Открой интерфейс OBSmusic.
-2. Переключись в `Pro`.
-3. Нажми `Авторизовать Pro`.
-4. После callback скопируй refresh token.
-5. Вставь его в `.env`:
-
-```env
-SPOTIFY_PRO_REFRESH_TOKEN=...
-```
-
-6. Перезапусти приложение.
-
----
-
-## Архитектура
-
-- `frontend/` — HTML/CSS/JS интерфейс.
-- `server/` — Node.js API и Spotify интеграция.
-- `scripts/` + `installer/windows/` — упаковка в portable `.exe` и инсталлятор.
 
 ---
 
 ## API
 
+- `GET /api/config`
 - `GET /api/free/current-track`
+- `GET /api/pro/current-track`
 - `GET /api/pro/auth/login`
 - `GET /api/pro/auth/callback`
-- `GET /api/pro/current-track`
-- `GET /api/config`
+- `GET /api/services/discovery`
+- `GET /api/services/current-track?service=spotify|ytmusic|yandex`

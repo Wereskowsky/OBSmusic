@@ -7,6 +7,7 @@ const {
   requestClientCredentialsToken,
   requestRefreshToken,
 } = require('../services/spotifyService');
+const { buildTrackFromTab, discoverMusicTabs } = require('../services/browserTabService');
 
 const router = express.Router();
 
@@ -56,7 +57,41 @@ router.get('/config', (_req, res) => {
       pollIntervalMs: 3000,
       authorized: Boolean(proSession.refreshToken),
     },
+    services: ['spotify', 'ytmusic', 'yandex'],
+    discovery: {
+      method: 'browser-debug-endpoints',
+      endpoints: (process.env.BROWSER_DEBUG_ENDPOINTS || 'http://127.0.0.1:9222/json,http://127.0.0.1:9223/json').split(','),
+    },
   });
+});
+
+
+router.get('/services/discovery', async (_req, res) => {
+  try {
+    const data = await discoverMusicTabs();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/services/current-track', async (req, res) => {
+  const service = String(req.query.service || '').toLowerCase();
+  if (!['ytmusic', 'yandex', 'spotify'].includes(service)) {
+    return res.status(400).json({ error: 'service must be one of: ytmusic, yandex, spotify' });
+  }
+
+  try {
+    const discovery = await discoverMusicTabs();
+    const tab = discovery.services[service];
+    if (!tab) {
+      return res.json({ service, track: null, message: 'No matching browser tab found' });
+    }
+
+    res.json({ service, track: buildTrackFromTab(service, tab), tab });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 router.get('/free/current-track', async (_req, res) => {

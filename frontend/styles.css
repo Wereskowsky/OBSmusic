@@ -104,3 +104,25 @@ button,
   align-items: center;
   gap: 12px;
 }
+
+.service-select-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.service-select-row select {
+  background: #222;
+  color: #fff;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.discovery-status {
+  margin: 4px 0 14px;
+  opacity: 0.8;
+  font-size: 0.92rem;
+}
